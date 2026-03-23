@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد التواصل</title>
+    <style>
+        :root { --bg: #121212; --card: #2a2a2a; --text: #ffffff; --active: #00FF66; --emergency: #FF3030; }
+        body { background-color: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #splash { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999; }
+        #start-btn { padding: 40px 80px; font-size: 3rem; background: var(--active); border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        #header { background: #1e1e1e; padding: 15px; text-align: center; font-size: 2.2rem; border-bottom: 2px solid #333; }
+        #grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 15px; padding: 15px; flex-grow: 1; }
+        .card { background: var(--card); border: 6px solid #444; border-radius: 25px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; outline: none; color: white; transition: 0.1s; }
+        .card:focus { border-color: var(--active); background: #333; transform: scale(1.02); box-shadow: 0 0 30px var(--active); }
+        .icon { font-size: 4rem; }
+        .label { font-size: 1.6rem; font-weight: bold; text-align: center; }
+        .emergency { border-color: #600; }
+        .emergency:focus { border-color: var(--emergency); }
+        .back { background: #444; }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <button id="start-btn">إبدأ</button>
+        <p style="color:white; margin-top:15px;">انقر هنا لتشغيل الصوت</p>
+    </div>
+
+    <div id="header">مساعد التواصل</div>
+    <div id="grid"></div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const header = document.getElementById('header');
+        const splash = document.getElementById('splash');
+
+        const menuData = {
+            main: [
+                { label: "احتياجات", icon: "🥛", target: "needs" },
+                { label: "تفاعلات", icon: "💬", target: "daily" },
+                { label: "مشاعر", icon: "😊", target: "feelings" },
+                { label: "الأشخاص", icon: "👪", target: "people" },
+                { label: "إجابات", icon: "👍", target: "answers" },
+                { label: "طوارئ", icon: "🚨", phrase: "إلحقوني، بدي مساعدة ضروري", type: "emergency" }
+            ],
+            needs: [
+                { label: "عطشان", icon: "💧", phrase: "عطشان، بدي أشرب" },
+                { label: "جوعان", icon: "🥖", phrase: "جوعان، بدي آكل" },
+                { label: "مش مرتاح", icon: "🛌", phrase: "مش مرتاح، غيرولي قعدتي" },
+                { label: "موجوع", icon: "🤕", phrase: "موجوع، في إشي بوجعني" },
+                { label: "حمام", icon: "🚽", phrase: "بدي أروح عالحمام" },
+                { label: "رجوع", icon: "🔙", target: "main", type: "back" }
+            ],
+            daily: [
+                { label: "تلفزيون", icon: "📺", phrase: "شغلوا التلفزيون" },
+                { label: "قرآن", icon: "📖", phrase: "شغلوا قرآن" },
+                { label: "مش سامع", icon: "👂", phrase: "عليّ صوتك، مش سامع" },
+                { label: "تعالوا", icon: "👋", phrase: "تعالوا جاي" },
+                { label: "أرتاح", icon: "😴", phrase: "تعبان، خلوني لحالي أرتاح" },
+                { label: "رجوع", icon: "🔙", target: "main", type: "back" }
+            ],
+            feelings: [
+                { label: "مبسوط", icon: "😇", phrase: "الحمدلله، أنا مبسوط" },
+                { label: "متضايق", icon: "😟", phrase: "أنا متضايق" },
+                { label: "الله يرضى عليكم", icon: "❤️", phrase: "الله يرضى عليكم" },
+                { label: "شو بصير؟", icon: "❓", phrase: "شو قاعد بصير؟ احكولي" },
+                { label: "برد / شوب", icon: "🌡️", phrase: "الجو مش مريحني، بردان أو مشوب" },
+                { label: "رجوع", icon: "🔙", target: "main", type: "back" }
+            ],
+            people: [
+                { label: "يا ابني", icon: "👨", phrase: "تعال يا ابني" },
+                { label: "يا بنتي", icon: "👩", phrase: "تعالي يا بنتي" },
+                { label: "يا حجّة", icon: "🧕", phrase: "يا حجّة، تعالي شوي" },
+                { label: "الممرض", icon: "🏥", phrase: "ناديلي الممرض" },
+                { label: "الكل يجتمع", icon: "🏠", phrase: "بدي الكل يتجمع عندي" },
+                { label: "رجوع", icon: "🔙", target: "main", type: "back" }
+            ],
+            answers: [
+                { label: "آه / أيوه", icon: "✅", phrase: "آه، أيوه" },
+                { label: "لأ", icon: "❌", phrase: "لأ" },
+                { label: "يسلمو", icon: "🙏", phrase: "يسلمو، غلبتكوا معي" },
+                { label: "ما بعرف", icon: "🤷", phrase: "ما بعرف" },
+                { label: "مين إجا؟", icon: "🚪", phrase: "مين إجا؟ مين في برا؟" },
+                { label: "رجوع", icon: "🔙", target: "main", type: "back" }
+            ]
+        };
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            
+            // This part searches for ANY Arabic voice installed
+            const voices = window.speechSynthesis.getVoices();
+            const arVoice = voices.find(v => v.lang.startsWith('ar'));
+            
+            if (arVoice) {
+                msg.voice = arVoice;
+            }
+            msg.lang = 'ar-SA';
+            msg.rate = 0.8;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function buildMenu(key) {
+            grid.innerHTML = '';
+            menuData[key].forEach((item, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'card' + (item.type ? ' ' + item.type : '');
+                btn.tabIndex = 0;
+                btn.innerHTML = `<span class="icon">${item.icon}</span><span class="label">${item.label}</span>`;
+                
+                const action = () => {
+                    if(item.target) buildMenu(item.target);
+                    if(item.phrase) speak(item.phrase);
+                };
+                
+                btn.onclick = action;
+                btn.onkeydown = (e) => { if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); action(); } };
+                grid.appendChild(btn);
+                if(index === 0) btn.focus();
+            });
+        }
+
+        document.getElementById('start-btn').onclick = () => {
+            splash.style.display = 'none';
+            speak("مرحباً");
+            buildMenu('main');
+        };
+
+        // Pre-load voices for Chrome
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    </script>
+</body>
+</html>
